@@ -8,7 +8,7 @@ import markdown
 
 ROOT = Path(__file__).resolve().parent.parent
 groups = [
-    ("作業說明", [ROOT / "REQUIREMENTS.md", ROOT / "AGENTS.md", ROOT / "WORKFLOW.md", ROOT / "CHECK_REPORT.md", ROOT / "00_discussion.md"]),
+    ("流程與檢查", [ROOT / "AGENTS.md", ROOT / "WORKFLOW.md", ROOT / "CHECK_REPORT.md"]),
     ("Wiki", [ROOT / "wiki/index.md"] + sorted((ROOT / "wiki/concepts").glob("*.md")) + sorted((ROOT / "wiki/sources").glob("*.md")) + [ROOT / "wiki/log.md"]),
     ("Raw 來源筆記", sorted((ROOT / "raw").glob("*.md"))),
     ("簡報", [ROOT / "slides/outline.md", ROOT / "slides/context.md"]),

@@ -8,11 +8,9 @@ GenAI 課程作業：先用「先討論、後生成」建一個 LLM Wiki，再�
 ## 繳交項目
 | 項目 | 檔案 |
 |---|---|
-| 需求摘要 | [REQUIREMENTS.md](REQUIREMENTS.md) |
 | AGENTS.md | [AGENTS.md](AGENTS.md) |
 | workflow 流程圖 | [WORKFLOW.md](WORKFLOW.md)（圖：[workflow.png](workflow.png)） |
 | 一次實際執行的檢查報告 | [CHECK_REPORT.md](CHECK_REPORT.md) |
-| 討論紀錄 | [00_discussion.md](00_discussion.md) |
 
 ![workflow](workflow.png)
 
