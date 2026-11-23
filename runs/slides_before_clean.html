@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAE 與 Steering：看懂並操控模型的腦袋</title>
+<style>
+:root{
+  --ink:#1d2330; --muted:#5f6b7d; --line:#d9dee6; --paper:#fbfaf7;
+  --sae:#2f6fdb; --sae-soft:#e6eefc; --steer:#d9662b; --steer-soft:#fcebe1;
+  --ok:#2f8f5b; --warn:#b5462f;
+  --font:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",system-ui,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#20242c;font-family:var(--font);color:var(--ink)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{width:1280px;height:720px;position:relative;transform-origin:center center}
+.slide{position:absolute;inset:0;background:var(--paper);padding:48px 72px 64px;display:none;flex-direction:column;justify-content:center;border-radius:6px;overflow:hidden}
+.slide.active{display:flex}
+.kicker{font-size:15px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.kicker .tag{display:inline-block;padding:2px 10px;border-radius:99px;font-weight:600;letter-spacing:.04em;margin-right:8px;text-transform:none}
+.tag.sae{background:var(--sae-soft);color:var(--sae)} .tag.steer{background:var(--steer-soft);color:var(--steer)} .tag.eval{background:#eceff3;color:#3d4757}
+h1{font-size:46px;line-height:1.2;margin:0 0 18px;font-weight:700}
+h2{font-size:36px;line-height:1.25;margin:0 0 22px;font-weight:700}
+p,li{font-size:22px;line-height:1.6}
+ul{margin:0;padding-left:1.1em} li{margin:6px 0}
+.lead{font-size:24px;color:#334;max-width:1000px}
+.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px 24px}
+.card h3{margin:0 0 8px;font-size:22px}
+.card p,.card li{font-size:19px;line-height:1.55;margin:4px 0}
+.card.sae{border-top:5px solid var(--sae)} .card.steer{border-top:5px solid var(--steer)} .card.eval{border-top:5px solid #6b778a}
+.big{font-size:64px;font-weight:800;line-height:1}
+.big.sae{color:var(--sae)} .big.steer{color:var(--steer)}
+.note{font-size:17px;color:var(--muted);border-left:3px solid var(--line);padding-left:12px;margin-top:14px}
+.analogy{background:#fff8e6;border:1px dashed #d8b24a;border-radius:10px;padding:12px 18px;font-size:19px;line-height:1.5}
+.analogy b{color:#8a6a10}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.chip{background:var(--sae-soft);color:#1d4fa8;padding:6px 14px;border-radius:99px;font-size:18px}
+.chip.steer{background:var(--steer-soft);color:#9a3f12}
+dfn{font-style:normal;border-bottom:2px dotted currentColor;cursor:help}
+.gloss{display:block;font-size:17px;color:var(--muted);margin-top:2px}
+code,.mono{font-family:var(--mono);font-size:.9em}
+.eq{font-family:var(--mono);font-size:26px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 20px;display:inline-block}
+.rank{list-style:none;padding:0;margin:0}
+.rank li{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:8px;margin:8px 0;background:#fff;border:1px solid var(--line);font-size:21px}
+.rank .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;background:#6b778a;flex:none}
+.rank li.win .n{background:var(--ok)} .rank li.lose{opacity:.75} .rank li.lose .n{background:var(--warn)}
+svg text{font-family:var(--font)}
+/* source footer */
+.src-foot{position:absolute;left:72px;right:72px;bottom:18px;font-size:14px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.src-foot .w{background:#eef1f5;border-radius:4px;padding:2px 8px;font-family:var(--mono);font-size:13px}
+body.hide-src .src-foot{display:none}
+/* title slide */
+.slide.title{background:linear-gradient(135deg,#fbfaf7 0%,#fbfaf7 55%,#eef3fc 55%,#fdf0e8 100%)}
+.roadmap{display:flex;gap:18px;margin-top:34px}
+.roadmap .step{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 22px}
+.roadmap .step .num{font-size:15px;color:var(--muted)}
+.roadmap .step b{display:block;font-size:26px;margin:4px 0}
+/* quiz */
+.q{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:12px}
+.q p{margin:0 0 8px;font-size:19px;font-weight:600}
+.q button{font:inherit;font-size:17px;border:1px solid var(--line);background:#f6f7f9;border-radius:7px;padding:6px 12px;margin:0 8px 6px 0;cursor:pointer}
+.q button.right{background:#e3f4ea;border-color:var(--ok);color:#1d6b42}
+.q button.wrong{background:#fbe6e1;border-color:var(--warn);color:#8f3322}
+.q .why{font-size:16px;color:var(--muted);display:none}
+.q.done .why{display:block}
+/* refs */
+.refs li{font-size:17px;line-height:1.45;margin:5px 0}
+.refs a{color:var(--sae)}
+/* chrome */
+#bar{position:fixed;left:0;bottom:0;height:4px;background:var(--steer);transition:width .25s}
+#hud{position:fixed;right:16px;bottom:12px;color:#c9ced8;font-size:13px;font-family:var(--mono);display:flex;gap:10px;align-items:center}
+#hud button{background:#2d333d;color:#dfe3ea;border:1px solid #444c58;border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title" id="s-title" data-wiki="linear-representation,sparse-autoencoder,activation-steering">
+  <div class="kicker">LLM Interpretability 入門</div>
+  <h1>SAE 與 Steering<br>看懂並操控模型的腦袋</h1>
+  <p class="lead">兩個工具：<dfn title="Sparse Autoencoder，稀疏自編碼器">SAE</dfn> 幫我們把模型內部拆成看得懂的特徵；<dfn title="推論時直接改模型的 activation">steering</dfn> 則是在模型想到一半時，把它往某個方向推。</p>
+  <div class="roadmap">
+    <div class="step"><span class="num">Part 1</span><b style="color:var(--sae)">看懂</b>神經元為什麼難懂、SAE 怎麼拆</div>
+    <div class="step"><span class="num">Part 2</span><b style="color:var(--steer)">操控</b>ActAdd、CAA 怎麼推方向</div>
+    <div class="step"><span class="num">Part 3</span><b style="color:#3d4757">有用嗎</b>公平比較下的結果與爭議</div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">linear-representation</span><span class="w">sparse-autoencoder</span><span class="w">activation-steering</span></footer>
+</section>
+
+<!-- 2 -->
+<section class="slide" id="s-neuron" data-wiki="neuron-vs-feature">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>問題</div>
+  <h2>直接看神經元，為什麼看不懂？</h2>
+  <div class="grid2">
+    <div class="card sae">
+      <h3>理想中</h3>
+      <p>一個神經元只對一種東西有反應。</p>
+      <p class="muted">例如影像分類器裡，有一個神經元只看「狗鼻子」。</p>
+      <svg viewBox="0 0 420 150" width="100%">
+        <circle cx="70" cy="75" r="34" fill="#e6eefc" stroke="#2f6fdb" stroke-width="3"/>
+        <text x="70" y="81" text-anchor="middle" font-size="18" fill="#1d4fa8">神經元</text>
+        <line x1="104" y1="75" x2="270" y2="75" stroke="#2f6fdb" stroke-width="3"/>
+        <rect x="270" y="52" width="130" height="46" rx="8" fill="#fff" stroke="#2f6fdb"/>
+        <text x="335" y="81" text-anchor="middle" font-size="18">狗鼻子</text>
+      </svg>
+    </div>
+    <div class="card eval">
+      <h3>實際上</h3>
+      <p>很多神經元同時對好幾個不相關的概念有反應，叫做 <dfn title="多義性">polysemanticity</dfn><span class="gloss">多義性：一個神經元有好幾個意思</span></p>
+      <p class="muted">在大型語言模型裡，神經元剛好對應一個乾淨概念的情況很少見。</p>
+      <svg viewBox="0 0 420 150" width="100%">
+        <circle cx="70" cy="75" r="34" fill="#eceff3" stroke="#6b778a" stroke-width="3"/>
+        <text x="70" y="81" text-anchor="middle" font-size="18">神經元</text>
+        <g stroke="#6b778a" stroke-width="2.5"><line x1="104" y1="70" x2="270" y2="22"/><line x1="104" y1="75" x2="270" y2="75"/><line x1="104" y1="80" x2="270" y2="128"/></g>
+        <g font-size="16" text-anchor="middle"><rect x="270" y="4" width="130" height="36" rx="8" fill="#fff" stroke="#6b778a"/><text x="335" y="28">貓臉</text>
+        <rect x="270" y="57" width="130" height="36" rx="8" fill="#fff" stroke="#6b778a"/><text x="335" y="81">汽車前方</text>
+        <rect x="270" y="110" width="130" height="36" rx="8" fill="#fff" stroke="#6b778a"/><text x="335" y="134">某種字型</text></g>
+      </svg>
+      <p class="note" style="margin-top:0">右邊三個概念只是示意，不是論文裡的真實神經元。</p>
+    </div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">neuron-vs-feature</span> ← s1 Toy Models of Superposition</footer>
+</section>
+
+<!-- 3 -->
+<section class="slide" id="s-superposition" data-wiki="superposition,neuron-vs-feature">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>原因</div>
+  <h2>原因：<dfn title="疊加">Superposition</dfn>（疊加）</h2>
+  <p class="lead" style="margin-top:-8px">模型用比較少的維度塞進比較多的特徵，因為大部分特徵很少同時出現。</p>
+  <div class="grid2" style="margin-top:8px">
+    <div class="card">
+      <h3>Toy model：把 5 個特徵壓進 2 維</h3>
+      <svg viewBox="0 0 520 230" width="100%">
+        <g transform="translate(120,118)">
+          <text x="0" y="-100" text-anchor="middle" font-size="16" fill="#5f6b7d">特徵很密集</text>
+          <line x1="0" y1="0" x2="80" y2="0" stroke="#2f6fdb" stroke-width="5" marker-end="url(#ah)"/>
+          <line x1="0" y1="0" x2="0" y2="-80" stroke="#2f6fdb" stroke-width="5" marker-end="url(#ah)"/>
+          <text x="0" y="102" text-anchor="middle" font-size="15">只留最重要的 2 個（像 PCA）</text>
+        </g>
+        <g transform="translate(390,118)">
+          <text x="0" y="-100" text-anchor="middle" font-size="16" fill="#5f6b7d">特徵很稀疏</text>
+          <g stroke="#d9662b" stroke-width="5" marker-end="url(#ah2)">
+            <line x1="0" y1="0" x2="80" y2="0"/><line x1="0" y1="0" x2="25" y2="-76"/><line x1="0" y1="0" x2="-65" y2="-47"/><line x1="0" y1="0" x2="-65" y2="47"/><line x1="0" y1="0" x2="25" y2="76"/>
+          </g>
+          <text x="0" y="102" text-anchor="middle" font-size="15">5 個全塞進去，互相干擾</text>
+        </g>
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0L10,5L0,10z" fill="#2f6fdb"/></marker>
+        <marker id="ah2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0,0L10,5L0,10z" fill="#d9662b"/></marker></defs>
+      </svg>
+    </div>
+    <div>
+      <ul>
+        <li>特徵變稀疏時，模型開始「疊」更多特徵進去</li>
+        <li>代價是互相干擾，要靠 ReLU 這種非線性過濾掉</li>
+        <li>從不疊到疊，中間有一個相變（phase change）</li>
+        <li>所以實際的網路，像是在有雜訊地模擬一個更大、更稀疏的網路</li>
+      </ul>
+      <div class="analogy" style="margin-top:18px"><b>比喻（自己想的）</b>：2 坪的倉庫要放 5 種東西。東西很少同時出現，就疊著放，代價是偶爾拿錯。</div>
+    </div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">superposition</span><span class="w">neuron-vs-feature</span> ← s1</footer>
+</section>
+
+<!-- 4 -->
+<section class="slide" id="s-linear" data-wiki="linear-representation">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>共同前提</div>
+  <h2>關鍵假設：一個概念 = 一個方向</h2>
+  <p class="lead">Linear representation hypothesis：模型裡的概念，對應到 activation 空間裡的一個方向。</p>
+  <div class="grid2" style="margin-top:10px">
+    <div class="card sae"><h3>看懂（SAE）</h3><p>SAE 學出的每個特徵，就是神經元 activation 的一個線性組合，也就是一個方向。</p><p class="muted">把 activation 拆成「很多方向加起來」。</p></div>
+    <div class="card steer"><h3>操控（Steering）</h3><p>在推論時，往某個方向加一個向量。</p><p class="muted">把 activation「往某方向推」。</p></div>
+  </div>
+  <p class="note">Toy Models 一文認為這個假設有實驗和理論支持。後面所有方法都站在這個假設上。</p>
+  <footer class="src-foot">wiki：<span class="w">linear-representation</span> ← s1, s2, s5</footer>
+</section>
+
+<!-- 5 -->
+<section class="slide" id="s-sae" data-wiki="sparse-autoencoder">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>工具</div>
+  <h2>SAE 是什麼？</h2>
+  <svg viewBox="0 0 1140 230" width="100%">
+    <g font-size="17" text-anchor="middle">
+      <rect x="10" y="60" width="150" height="110" rx="10" fill="#fff" stroke="#6b778a" stroke-width="2"/>
+      <text x="85" y="108">模型的</text><text x="85" y="132">activation</text>
+      <path d="M170 115 L300 115" stroke="#2f6fdb" stroke-width="3" marker-end="url(#a3)"/>
+      <text x="235" y="100">encoder</text>
+      <rect x="310" y="10" width="500" height="210" rx="12" fill="#e6eefc" stroke="#2f6fdb" stroke-width="2"/>
+      <text x="560" y="40" fill="#1d4fa8">很多很多特徵，但每次只有少數亮起來</text>
+      <g id="cells"></g>
+      <path d="M820 115 L950 115" stroke="#2f6fdb" stroke-width="3" marker-end="url(#a3)"/>
+      <text x="885" y="100">decoder</text>
+      <rect x="960" y="60" width="170" height="110" rx="10" fill="#fff" stroke="#6b778a" stroke-width="2"/>
+      <text x="1045" y="108">還原回</text><text x="1045" y="132">activation</text>
+    </g>
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0L10,5L0,10z" fill="#2f6fdb"/></marker></defs>
+  </svg>
+  <div class="grid3" style="margin-top:6px">
+    <div class="card sae"><h3>目標 1：還原得回來</h3><p>decoder 用線性轉換，把特徵還原成原本的 activation。</p></div>
+    <div class="card sae"><h3>目標 2：稀疏</h3><p>訓練時加 <dfn title="懲罰太多特徵同時非零">sparsity penalty</dfn>，讓每個輸入只有很少數特徵非零。</p></div>
+    <div class="card sae"><h3>變體：<dfn title="有門檻的 ReLU">JumpReLU</dfn></h3><p>每個特徵有可學習的門檻，低於門檻就輸出 0。</p></div>
+  </div>
+  <p class="note">為什麼用 SAE？作者試過做沒有疊加的架構，擋不住多義性；標準 dictionary learning 又會嚴重 overfitting。</p>
+  <footer class="src-foot">wiki：<span class="w">sparse-autoencoder</span> ← s2, s3, s4</footer>
+</section>
+
+<!-- 6 -->
+<section class="slide" id="s-mono" data-wiki="sae-features,s2,sparse-autoencoder">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>2023 Towards Monosemanticity</div>
+  <h2>第一次成功：一層的小 transformer</h2>
+  <div class="grid2">
+    <div style="display:flex;align-items:center;gap:26px">
+      <div style="text-align:center"><div class="big" style="color:#6b778a">512</div><p class="muted" style="margin:6px 0 0">個神經元</p></div>
+      <svg width="90" height="40" viewBox="0 0 90 40"><path d="M5 20 L75 20" stroke="#2f6fdb" stroke-width="4"/><path d="M70 8 L86 20 L70 32z" fill="#2f6fdb"/></svg>
+      <div style="text-align:center"><div class="big sae">4000+</div><p class="muted" style="margin:6px 0 0">個特徵</p></div>
+    </div>
+    <div>
+      <p>拆出來的特徵很多都能用一個詞描述：</p>
+      <div class="chips"><span class="chip">DNA 序列</span><span class="chip">法律用語</span><span class="chip">HTTP 請求</span><span class="chip">希伯來文</span><span class="chip">營養標示</span></div>
+      <p style="margin-top:20px">這些特徵比神經元本身更「單義」（monosemantic）。</p>
+    </div>
+  </div>
+  <p class="note">SAE 是在 80 億筆 MLP activation 上訓練的。</p>
+  <footer class="src-foot">wiki：<span class="w">sae-features</span><span class="w">s2</span><span class="w">sparse-autoencoder</span> ← s2 Towards Monosemanticity</footer>
+</section>
+
+<!-- 7 -->
+<section class="slide" id="s-scaling" data-wiki="sparse-autoencoder,sae-features">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>2024 Scaling Monosemanticity</div>
+  <h2>放大到上線等級的模型：Claude 3 Sonnet</h2>
+  <p>在模型中間層的 <dfn title="Transformer 每一層之間傳遞資訊的主幹向量">residual stream</dfn> 上，訓練了三個大小不同的 SAE：</p>
+  <div class="grid3" style="margin:6px 0 18px">
+    <div class="card sae" style="text-align:center"><div class="big sae" style="font-size:52px">1M</div><p class="muted">個特徵</p></div>
+    <div class="card sae" style="text-align:center"><div class="big sae" style="font-size:52px">4M</div><p class="muted">個特徵</p></div>
+    <div class="card sae" style="text-align:center"><div class="big sae" style="font-size:52px">34M</div><p class="muted">個特徵</p></div>
+  </div>
+  <div class="grid2" style="gap:28px">
+    <div><p style="margin:0 0 6px"><b>更抽象的特徵</b></p><div class="chips"><span class="chip">名人</span><span class="chip">國家城市</span><span class="chip">程式碼型別</span><span class="chip">諷刺</span><span class="chip">程式錯誤</span></div><p class="muted" style="font-size:18px">而且多語言、多模態。</p></div>
+    <div><p style="margin:0 0 6px"><b>跟安全相關的特徵</b></p><div class="chips"><span class="chip steer">欺騙</span><span class="chip steer">權力追求</span><span class="chip steer">諂媚</span><span class="chip steer">偏見</span><span class="chip steer">危險內容</span></div></div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">sparse-autoencoder</span><span class="w">sae-features</span> ← s3</footer>
+</section>
+
+<!-- 8 -->
+<section class="slide" id="s-golden" data-wiki="feature-steering">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span><span class="tag steer">接到 Part 2</span></div>
+  <h2>Golden Gate Bridge 特徵</h2>
+  <div class="grid2">
+    <div class="card sae">
+      <h3>它對什麼有反應</h3>
+      <p>中文、日文、韓文、俄文的金門大橋介紹，都會讓同一個特徵強烈觸發。</p>
+      <p class="muted">同一個概念、不同語言，模型內部是同一個方向。</p>
+    </div>
+    <div class="card steer">
+      <h3>把它調大會怎樣</h3>
+      <p>把這個特徵強制放大到訓練資料最大值的 10 倍，模型會說<b>自己就是金門大橋</b>。</p>
+      <p class="note" style="margin-top:6px">「10 倍」來自第三方摘要，wiki 標在「待確認」。</p>
+    </div>
+  </div>
+  <p style="margin-top:22px">這就是 <b>feature steering</b>：找到特徵後手動調大或調小，行為就跟著變。欺騙、諂媚這類安全特徵，操控後也會因果性地改變輸出。</p>
+  <footer class="src-foot">wiki：<span class="w">feature-steering</span> ← s3</footer>
+</section>
+
+<!-- 9 -->
+<section class="slide" id="s-gemmascope" data-wiki="open-tools">
+  <div class="kicker"><span class="tag sae">Part 1 看懂</span>自己動手</div>
+  <h2>自己也能看：Gemma Scope</h2>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>Google DeepMind 公開的一整套 JumpReLU SAE</li>
+        <li>Gemma 2 2B、9B 的每一層和子層都有，27B 有部分層</li>
+        <li>權重以 CC-BY-4.0 放在 HuggingFace</li>
+        <li>Neuronpedia 有互動 demo，可以看每個特徵在哪些字上亮起來</li>
+      </ul>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="card sae" style="display:flex;align-items:center;gap:18px"><div class="big sae" style="font-size:52px">400+</div><p>個 SAE</p></div>
+      <div class="card sae" style="display:flex;align-items:center;gap:18px"><div class="big sae" style="font-size:52px">3000萬+</div><p>個特徵</p></div>
+    </div>
+  </div>
+  <p class="note">DeepMind 把 SAE 比喻成一台看進語言模型內部的顯微鏡。</p>
+  <footer class="src-foot">wiki：<span class="w">open-tools</span> ← s4</footer>
+</section>
+
+<!-- 10 -->
+<section class="slide" id="s-steering" data-wiki="activation-steering">
+  <div class="kicker"><span class="tag steer">Part 2 操控</span>另一條路</div>
+  <h2>不用 SAE，也能操控：Activation Steering</h2>
+  <div class="grid3">
+    <div class="card eval"><h3>Finetuning / RLHF</h3><p>改模型權重</p><p class="muted">要訓練，成本高</p></div>
+    <div class="card eval"><h3>Prompt engineering</h3><p>改輸入的文字</p><p class="muted">不碰模型內部</p></div>
+    <div class="card steer"><h3>Activation steering</h3><p>推論時直接改 activation</p><p class="muted">比 finetuning、RLHF 省很多計算</p></div>
+  </div>
+  <p style="margin-top:26px">核心問題只有一個：<b>要往哪個方向推？</b></p>
+  <div class="chips"><span class="chip steer">從 SAE 特徵來：feature steering</span><span class="chip steer">從對比 prompt 算：ActAdd</span><span class="chip steer">從很多對比例子平均：CAA</span></div>
+  <footer class="src-foot">wiki：<span class="w">activation-steering</span> ← s5, s6</footer>
+</section>
+
+<!-- 11 -->
+<section class="slide" id="s-actadd" data-wiki="actadd">
+  <div class="kicker"><span class="tag steer">Part 2 操控</span>2023 ActAdd</div>
+  <h2>ActAdd：Love 減 Hate</h2>
+  <div class="grid2">
+    <div>
+      <p>1. 把 "Love" 和 "Hate" 各跑一次 <dfn title="模型從輸入算到輸出的一次正向計算">forward pass</dfn></p>
+      <p>2. 某一層的 activation 相減，得到 <dfn title="一個代表某種行為方向的向量">steering vector</dfn></p>
+      <div class="eq" style="margin:6px 0 14px">v = h(Love) − h(Hate)</div>
+      <p>3. 生成時，把 c · v 加回同一層</p>
+      <div class="eq">h' = h + c · v</div>
+    </div>
+    <div>
+      <div class="card steer"><h3>特色</h3><ul><li>一對例子就夠</li><li>不用最佳化、不用標註資料</li><li>不相關的主題表現大致保留</li></ul></div>
+      <div class="card" style="margin-top:14px"><h3>做過的模型</h3><p>GPT-2；在 Llama-13B、GPT-J-6B 重現；新版在 LLaMA-3、OPT 上做到情緒轉正向和去毒性的 SOTA</p></div>
+    </div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">actadd</span> ← s5</footer>
+</section>
+
+<!-- 12 -->
+<section class="slide" id="s-caa" data-wiki="caa,s6">
+  <div class="kicker"><span class="tag steer">Part 2 操控</span>2024 CAA</div>
+  <h2>CAA：很多對例子取平均</h2>
+  <div class="grid2">
+    <div>
+      <ul>
+        <li>準備很多對「有某行為 / 沒有某行為」的例子，例如事實回答 vs 幻覺回答</li>
+        <li>取 activation 差值的平均當 steering vector</li>
+        <li>在使用者 prompt 之後每個 token 都加上去：乘正數加強、乘負數減弱</li>
+      </ul>
+      <p class="note">跟 ActAdd 的差別：ActAdd 用一對 prompt，CAA 平均很多對。</p>
+    </div>
+    <div>
+      <div class="card steer"><h3>結果（Llama 2 Chat，7B 到 70B）</h3><ul><li>測六種行為，加向量行為變多、減向量變少</li><li>例：7B 第 13 層對諂媚（sycophancy）做 steering</li><li>疊在 finetuning 和 system prompt 之上仍有效</li><li>對模型能力影響很小</li></ul></div>
+      <p class="muted" style="font-size:18px">ACL 2024 Outstanding Paper</p>
+    </div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">caa</span><span class="w">s6</span> ← s6</footer>
+</section>
+
+<!-- 13 -->
+<section class="slide" id="s-axbench" data-wiki="steering-evaluation">
+  <div class="kicker"><span class="tag eval">Part 3 有用嗎</span>2025 AxBench</div>
+  <h2>公平比較下，誰比較會 steering？</h2>
+  <p class="lead" style="margin-top:-6px">AxBench：第一個能直接比較各種 steering 方法的大型 <dfn title="評測基準">benchmark</dfn>，在 Gemma-2-2B 和 9B 上測。</p>
+  <div class="grid2">
+    <div><p style="margin:0 0 6px"><b>Steering 任務</b></p>
+      <ul class="rank"><li class="win"><span class="n">1</span>直接寫 prompt</li><li><span class="n">2</span>Finetuning</li><li class="lose"><span class="n">✗</span>SAE：沒有競爭力</li></ul></div>
+    <div><p style="margin:0 0 6px"><b>概念偵測任務</b>（某概念有沒有出現）</p>
+      <ul class="rank"><li class="win"><span class="n">1</span>DiffMean（差值平均）</li><li class="lose"><span class="n">✗</span>SAE：沒有競爭力</li></ul>
+      <p class="note">作者另外提出 ReFT-r1，兩項都有競爭力，又保有可解釋性。</p></div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">steering-evaluation</span> ← s7</footer>
+</section>
+
+<!-- 14 -->
+<section class="slide" id="s-debate" data-wiki="steering-evaluation,sae-limitations">
+  <div class="kicker"><span class="tag eval">Part 3 有用嗎</span>現況</div>
+  <h2>爭議還沒結束</h2>
+  <div class="grid2">
+    <div class="card eval"><h3>2026 的反駁</h3><ul><li>認為 AxBench 沒有公平對待 SAE</li><li>用監督式方法挑選、標註特徵後，SAE 可以接近 LoRA 的表現</li><li>所以 SAE steering 好不好，很大部分看<b>怎麼挑特徵</b></li></ul></div>
+    <div class="card sae"><h3>SAE 本身的限制</h3><ul><li>特徵不保證找齊</li><li>還沒有嚴謹方法確認特徵忠實反映模型怎麼算</li><li>訓練很貴，比 steering vector、probing 難很多</li></ul></div>
+  </div>
+  <p style="margin-top:22px">目前比較穩的結論：SAE 很適合用來<b>看懂</b>；拿來<b>操控</b>，正反證據都有。</p>
+  <footer class="src-foot">wiki：<span class="w">steering-evaluation</span><span class="w">sae-limitations</span> ← s3, s4, s7, s8</footer>
+</section>
+
+<!-- 15 -->
+<section class="slide" id="s-recap" data-wiki="superposition,sparse-autoencoder,activation-steering,steering-evaluation">
+  <div class="kicker">重點回顧</div>
+  <h2>三件事 + 小測驗</h2>
+  <div class="grid2" style="grid-template-columns:0.9fr 1.1fr">
+    <div>
+      <div class="card sae" style="margin-bottom:12px"><p><b>1.</b> 神經元因為 superposition 是多義的，所以看不懂</p></div>
+      <div class="card sae" style="margin-bottom:12px"><p><b>2.</b> SAE 把 activation 拆成很多稀疏、看得懂的特徵</p></div>
+      <div class="card steer"><p><b>3.</b> Steering 是往某個方向推 activation；但公平比較下 prompting 常常更強</p></div>
+    </div>
+    <div id="quiz">
+      <div class="q" data-ans="b"><p>Q1 為什麼一個神經元會有好幾個意思？</p><button data-k="a">模型訓練壞了</button><button data-k="b">特徵比維度多，被疊在一起</button><button data-k="c">神經元太少要重訓</button><div class="why">特徵很稀疏時，模型會把多個特徵疊進同一組維度。</div></div>
+      <div class="q" data-ans="a"><p>Q2 SAE 的訓練目標是？</p><button data-k="a">還原得回來 + 稀疏</button><button data-k="b">讓模型更準</button><button data-k="c">讓神經元變少</button><div class="why">decoder 要還原 activation，sparsity penalty 讓特徵稀疏。</div></div>
+      <div class="q" data-ans="c"><p>Q3 AxBench 裡 steering 任務表現最好的是？</p><button data-k="a">SAE</button><button data-k="b">ActAdd</button><button data-k="c">直接寫 prompt</button><div class="why">prompting 第一、finetuning 第二，SAE 沒有競爭力。</div></div>
+    </div>
+  </div>
+  <footer class="src-foot">wiki：<span class="w">superposition</span><span class="w">sparse-autoencoder</span><span class="w">activation-steering</span><span class="w">steering-evaluation</span></footer>
+</section>
+
+<!-- 16 -->
+<section class="slide" id="s-refs" data-wiki="index">
+  <div class="kicker">參考資料</div>
+  <h2>想深入看什麼</h2>
+  <ol class="refs">
+    <li>[s1] Elhage et al. (2022). <a href="https://transformer-circuits.pub/2022/toy_model/index.html">Toy Models of Superposition</a></li>
+    <li>[s2] Bricken et al. (2023). <a href="https://transformer-circuits.pub/2023/monosemantic-features/">Towards Monosemanticity</a></li>
+    <li>[s3] Templeton et al. (2024). <a href="https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html">Scaling Monosemanticity</a></li>
+    <li>[s4] Lieberum et al. (2024). <a href="https://arxiv.org/abs/2408.05147">Gemma Scope</a></li>
+    <li>[s5] Turner et al. (2023). <a href="https://arxiv.org/abs/2308.10248">Activation Addition</a></li>
+    <li>[s6] Rimsky et al. (2024). <a href="https://aclanthology.org/2024.acl-long.828/">Steering Llama 2 via Contrastive Activation Addition</a></li>
+    <li>[s7] Wu et al. (2025). <a href="https://arxiv.org/abs/2501.17148">AxBench</a></li>
+    <li>[s8] Jørgensen &amp; Hansen (2026). <a href="https://arxiv.org/abs/2605.31183">Steering LLMs? Actually, SAEs can outperform simple baselines</a></li>
+  </ol>
+  <p class="note">每張投影片下方的 wiki：標籤就是內容來自哪個 wiki 頁。按 S 可以開關。</p>
+  <footer class="src-foot">wiki：<span class="w">index</span></footer>
+</section>
+
+</div></div>
+<div id="bar"></div>
+<div id="hud"><span id="count"></span><button id="srcbtn">來源 S</button><button id="prev">‹</button><button id="next">›</button></div>
+<script>
+(function(){
+  var cells=document.getElementById('cells'), ns='http://www.w3.org/2000/svg', lit=[3,11,22,30];
+  for(var i=0;i<36;i++){var r=document.createElementNS(ns,'rect');var c=i%12,row=Math.floor(i/12);
+    r.setAttribute('x',340+c*38);r.setAttribute('y',62+row*48);r.setAttribute('width',28);r.setAttribute('height',34);r.setAttribute('rx',5);
+    r.setAttribute('fill',lit.indexOf(i)>=0?'#2f6fdb':'#fff');r.setAttribute('stroke','#9db8ea');cells.appendChild(r);}
+  var slides=[].slice.call(document.querySelectorAll('.slide')), i=0;
+  var m=location.hash.match(/^#(\d+)$/); if(m) i=Math.min(slides.length-1,Math.max(0,+m[1]-1));
+  function show(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach(function(s,k){s.classList.toggle('active',k===i)});
+    document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+    history.replaceState(null,'','#'+(i+1));}
+  function fit(){var s=Math.min(innerWidth/1280,(innerHeight-8)/720);document.getElementById('stage').style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();show(i);
+  addEventListener('keydown',function(e){
+    if(['ArrowRight','PageDown',' '].indexOf(e.key)>=0){e.preventDefault();show(i+1);}
+    else if(['ArrowLeft','PageUp'].indexOf(e.key)>=0){e.preventDefault();show(i-1);}
+    else if(e.key==='s'||e.key==='S'){document.body.classList.toggle('hide-src');}
+    else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(slides.length-1);}
+  });
+  document.getElementById('next').onclick=function(){show(i+1)};
+  document.getElementById('prev').onclick=function(){show(i-1)};
+  document.getElementById('srcbtn').onclick=function(){document.body.classList.toggle('hide-src')};
+  var x0=null;addEventListener('touchstart',function(e){x0=e.touches[0].clientX});
+  addEventListener('touchend',function(e){if(x0===null)return;var dx=e.changedTouches[0].clientX-x0;if(Math.abs(dx)>50)show(i+(dx<0?1:-1));x0=null;});
+  [].forEach.call(document.querySelectorAll('.q'),function(q){
+    [].forEach.call(q.querySelectorAll('button'),function(b){b.onclick=function(){
+      if(q.classList.contains('done'))return;q.classList.add('done');
+      b.classList.add(b.dataset.k===q.dataset.ans?'right':'wrong');
+      q.querySelector('button[data-k="'+q.dataset.ans+'"]').classList.add('right');};});
+  });
+})();
+</script>
+</body>
+</html>

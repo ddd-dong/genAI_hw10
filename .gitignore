@@ -1,0 +1,4 @@
+runs/shots/
+__pycache__/
+*.zip
+submission.txt

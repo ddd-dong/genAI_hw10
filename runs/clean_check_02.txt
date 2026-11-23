@@ -1,0 +1,3 @@
+flags=2
+FLAG slide 10 (s-steering) [META] /來源/ : Part 2 操控另一條路 不用 SAE，也能操控：Activation Steering Finetuning / RLHF改模型權重要訓
+FLAG slide 16 (s-refs) [META] /\bs\d\b/ : 參考資料 想深入看什麼 [s1] Elhage et al. (2022). Toy Models of Superposition [s2

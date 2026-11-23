@@ -1,0 +1,10 @@
+flags=9
+FLAG slide 2 (s-neuron) [META] /示意/ : 神經元 貓臉 汽車前方 某種字型 右邊三個概念只是示意，不是論文裡的真實神經元。
+FLAG slide 3 (s-superposition) [META] /自己想的/ : Toy model：把 5 個特徵壓進 2 維 特徵很密集 只留最重要的 2 個（像 PCA） 特徵很稀疏 5 個全塞進去，互相干擾 特徵變
+FLAG slide 4 (s-linear) [AI] /站在.{0,8}上/ : 後面所有方法都站在這個假設上。
+FLAG slide 8 (s-golden) [META] /wiki/ : 「10 倍」來自第三方摘要，wiki 標在「待確認」。
+FLAG slide 8 (s-golden) [AI] /這就是/ : 這就是 feature steering：找到特徵後手動調大或調小，行為就跟著變。
+FLAG slide 10 (s-steering) [AI] /核心(問題|在於)/ : Part 2 操控另一條路 不用 SAE，也能操控：Activation Steering Finetuning / RLHF改模型權重要訓
+FLAG slide 14 (s-debate) [AI] /比較穩的結論/ : Part 3 有用嗎現況 爭議還沒結束 2026 的反駁認為 AxBench 沒有公平對待 SAE用監督式方法挑選、標註特徵後，SAE 可以
+FLAG slide 16 (s-refs) [META] /wiki/ : 參考資料 想深入看什麼 [s1] Elhage et al. (2022). Toy Models of Superposition [s2
+FLAG slide 16 (s-refs) [META] /按 ?S/ : 按 S 可以開關。

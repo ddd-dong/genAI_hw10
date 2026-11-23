@@ -1,0 +1,2 @@
+pages=21 raw=8 errors=0 warnings=1
+WARN  raw s8 has no wiki/sources/s8.md yet

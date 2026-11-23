@@ -1,0 +1,3 @@
+pages=14 raw=6 errors=0 warnings=2
+WARN  raw s5 has no wiki/sources/s5.md yet
+WARN  raw s6 has no wiki/sources/s6.md yet

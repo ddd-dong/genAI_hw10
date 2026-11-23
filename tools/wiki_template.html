@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAE & Steering LLM Wiki</title>
+<style>
+:root{--ink:#1d2330;--muted:#5f6b7d;--line:#e1e5ec;--sae:#2f6fdb;--steer:#d9662b;--font:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;font-family:var(--font);color:var(--ink);background:#fbfaf7;display:flex;min-height:100vh}
+nav{width:290px;flex:none;border-right:1px solid var(--line);background:#fff;padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+nav h1{font-size:18px;margin:0 0 4px}nav .sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+nav details{margin-bottom:10px}nav summary{font-weight:700;font-size:14px;cursor:pointer;padding:4px 0}
+nav a{display:block;font-size:13.5px;color:#334;text-decoration:none;padding:3px 8px;border-radius:5px;word-break:break-all}
+nav a:hover,nav a.on{background:#eef3fc;color:var(--sae)}
+main{flex:1;min-width:0;padding:36px 56px;max-width:980px}
+.path{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--muted);margin-bottom:6px}
+h1{font-size:30px}h2{font-size:22px;margin-top:28px;border-bottom:1px solid var(--line);padding-bottom:4px}
+p,li{line-height:1.75;font-size:16px}blockquote{margin:12px 0;padding:10px 16px;background:#eef3fc;border-left:4px solid var(--sae);border-radius:4px}
+blockquote p{margin:0}
+table{border-collapse:collapse;margin:12px 0;font-size:14.5px}td,th{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:#f3f5f8}
+pre{background:#1f2430;color:#e6e9ef;padding:14px 16px;border-radius:8px;overflow:auto;font-size:13px;line-height:1.5}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.9em}
+a.wl{color:var(--sae);text-decoration:none;border-bottom:1px dashed}a.src{font-size:11px;background:#fcebe1;color:#9a3f12;padding:1px 6px;border-radius:99px;text-decoration:none;font-family:ui-monospace,Menlo,monospace;vertical-align:1px}
+@media(max-width:800px){body{display:block}nav{position:static;width:auto;height:auto}main{padding:20px}}
+</style></head><body>
+<nav><h1>SAE &amp; Steering Wiki</h1><div class="sub">8 篇來源 · 12 個概念頁 · <a href="#REQUIREMENTS" style="display:inline;padding:0">需求</a> · <a href="#AGENTS" style="display:inline;padding:0">AGENTS.md</a> · <a href="#WORKFLOW" style="display:inline;padding:0">流程圖</a> · <a href="#CHECK-REPORT" style="display:inline;padding:0">檢查報告</a></div><!--NAV--></nav>
+<main id="m"></main>
+<script>
+const P=/*PAGES*/;
+function go(){let k=decodeURIComponent(location.hash.slice(1))||'index';if(!P[k])k='index';
+ document.getElementById('m').innerHTML='<div class="path">'+P[k].title+'</div>'+P[k].html;
+ document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+k));scrollTo(0,0);}
+addEventListener('hashchange',go);go();
+</script></body></html>

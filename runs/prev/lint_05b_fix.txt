@@ -1,0 +1,2 @@
+pages=16 raw=6 errors=0 warnings=1
+WARN  raw s6 has no wiki/sources/s6.md yet

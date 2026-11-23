@@ -1,0 +1,27 @@
+# 需求摘要
+
+## 要做什麼
+用 LLM Wiki 當知識庫，做一份教學用 HTML 簡報，讓沒碰過 interpretability 的人看懂 SAE 和 activation steering。
+
+## 對象
+學過一點 ML（知道 neural network、activation 是什麼），沒碰過 interpretability 的同學。
+
+## Wiki 的需求
+1. 主題：SAE（Sparse Autoencoder）與 Activation Steering
+2. 先討論、後生成：主題範圍、對象、資料清單、概念頁清單先定好（00_discussion.md）才開始寫
+3. ingest 至少 5 篇，實際 8 篇，一次一篇
+4. 每條事實都要標 `[src:sX]`，數字一定要在原始筆記裡找得到
+5. 概念頁第一行是一句白話解釋
+6. 沒確認的東西放「待確認」，自己想的比喻放「比喻」，兩個都不能當事實用
+
+## 簡報的需求
+1. 可以直接在瀏覽器看的單一 HTML，鍵盤 / 手機滑動都能翻頁
+2. 教學結構：問題、原因、工具、例子、評估、回顧 + 小測驗
+3. 每張都能追回 wiki 頁（footer 標籤，按 S 開關）
+4. 投影片上的數字一定要在它引用的 wiki 頁裡
+5. 術語第一次出現要有解釋
+6. 本體只放教學內容：不能有流程用語（wiki、待確認、示意）、不能有制式 AI 句型
+7. 沒確認的事實不進簡報
+
+## 完成標準
+lint 0 error、fact-check 無未解問題、大綱檢查 0 error、簡報檢查 0 error、清稿 0 flag、截圖 0 overflow

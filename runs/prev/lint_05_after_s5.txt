@@ -1,0 +1,4 @@
+pages=16 raw=6 errors=2 warnings=1
+ERROR wiki/concepts/lethal-trifecta.md: broken link [[camel]]
+ERROR wiki/sources/s5.md: broken link [[camel]]
+WARN  raw s6 has no wiki/sources/s6.md yet

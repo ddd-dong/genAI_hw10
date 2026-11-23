@@ -1,0 +1,3 @@
+slides=16 errors=2
+ERROR slide 6 (s-mono): number '80' not in cited wiki pages ['sae-features', 's2']
+ERROR slide 12 (s-caa): number '2024' not in cited wiki pages ['caa']
