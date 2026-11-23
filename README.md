@@ -2,8 +2,8 @@
 
 GenAI 課程作業：先用「先討論、後生成」建一個 LLM Wiki，再用它當知識來源做教學 HTML 簡報。
 
-- 教學簡報：[slides/](https://ddd-dong.github.io/llm-wiki-sae-steering/slides/)
-- Wiki 網頁版：[wiki.html](https://ddd-dong.github.io/llm-wiki-sae-steering/wiki.html)
+- 教學簡報：[slides/](https://ddd-dong.github.io/genAI_hw10/slides/)
+- Wiki 網頁版：[wiki.html](https://ddd-dong.github.io/genAI_hw10/wiki.html)
 
 ## 繳交項目
 | 項目 | 檔案 |
